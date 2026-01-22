@@ -173,19 +173,28 @@ Once containers are running, access NetBox in your browser:
 http://<server-ip>:8000
 ```
 
-Default credentials (if configured):
-
-* Username: `admin`
-* Password: defined in `.env`
-
 ---
 
 ## Step 7: Load Demo Data (Optional)
 
-To load demo data:
+Stop netbox and netbox-worker:
 
 ```bash
-cd /opt/netbox/netbox-demo-data
+docker compose stop netbox netbox-worker
+```
+
+Load demo-data to the database:
+
+```bash
+# re-crete the database
+docker compose exec postgres sh -c 'psql -U $POSTGRES_USER postgres -c "DROP DATABASE netbox;"'
+docker compose exec postgres sh -c 'psql -U $POSTGRES_USER postgres -c "CREATE DATABASE netbox;"'
+# copy data inside the container
+docker cp ../netbox-demo-data/sql/netbox-demo-v4.5.sql  "$(docker compose ps -q postgres)":/tmp/netbox-demo.sql
+# load data to the database
+docker compose exec postgres  bash -c "psql -U $POSTGRES_USER netbox < /tmp/netbox-demo.sql"
+# restart netbox
+docker compose up -d
 ```
 
 Follow the instructions in the `netbox-demo-data` repository to import sample objects into NetBox.
@@ -237,4 +246,3 @@ docker compose down -v
 * NetBox: https://github.com/netbox-community/netbox
 * NetBox Docker: https://github.com/netbox-community/netbox-docker
 * NetBox Demo Data: https://github.com/netbox-community/netbox-demo-data
-
