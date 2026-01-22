@@ -16,7 +16,7 @@ The goal is to offer a simple, reproducible setup suitable for demos, learning, 
 
 Directory layout:
 
-```
+```text
 /opt/netbox/
 ├── netbox-docker/
 └── netbox-demo-data/
@@ -46,20 +46,46 @@ Update the system and install required packages:
 
 ```bash
 apt update && apt upgrade -y
-apt install -y ca-certificates curl gnupg git
+apt install -y ca-certificates curl gnupg git lsb-release
 ```
 
-Install Docker:
+Add Docker's official GPG key:
 
 ```bash
-curl -fsSL https://get.docker.com | sh
-systemctl enable docker --now
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 ```
 
-Install Docker Compose plugin:
+Add the repository to Apt sources:
 
 ```bash
-apt install -y docker-compose-plugin
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/debian
+Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+```
+
+Install the Docker packages (latest version):
+
+```bash
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Verify/Start docker service:
+
+```bash
+sudo systemctl status docker
+sudo systemctl start docker
+```
+
+Add your current user to group docker to run `docker` commands without sudo. This readme is written for a demo on an EC2 Instance, and System Manager Connect is used to connect under user `ssm-user`
+
+```bash
+sudo usermod -aG docker ssm-user
 ```
 
 Verify installation:
@@ -67,6 +93,12 @@ Verify installation:
 ```bash
 docker --version
 docker compose version
+```
+
+Verify that the installation is successful by running the hello-world image:
+
+```bash
+sudo docker run hello-world
 ```
 
 ---
@@ -106,17 +138,13 @@ Navigate to the NetBox Docker directory:
 cd /opt/netbox/netbox-docker
 ```
 
-Copy the example environment file:
+Copy the example override file:
 
 ```bash
-cp env-example .env
+cp docker-compose.override.yml.example docker-compose.override.yml
 ```
 
-Edit `.env` as needed (minimum configuration for demo):
-
-* Database credentials
-* Superuser password
-* Allowed hosts
+Read and edit the file to your liking.
 
 ---
 
@@ -141,7 +169,7 @@ docker compose ps
 
 Once containers are running, access NetBox in your browser:
 
-```
+```text
 http://<server-ip>:8000
 ```
 
